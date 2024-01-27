@@ -5,7 +5,7 @@
   "scripts": {
     "start": "bun run index.ts"
   },
-  "dependencies": {},
+  "dependencies": { "dotenv": "^16.4.1", "twilio": "^4.21.0" },
   "devDependencies": {
     "bun-types": "latest"
   },
