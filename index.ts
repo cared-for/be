@@ -62,6 +62,7 @@ const outboundCall = async (req: Request) => {
       headers: { "content-type": "text/xml" },
     });
   } catch (error: any) {
+    console.log("does it not get in here with the error?: ", error);
     return new Response(error.message, {
       headers: { "content-type": "text/xml" },
     })

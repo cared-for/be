@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "bun --hot run index.ts",
+    "build": "bun build index.ts",
     "generate": "bunx drizzle-kit generate:pg",
     "migrate": "bunx tsx db/migrate.ts"
   },
