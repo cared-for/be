@@ -8,6 +8,8 @@ const client = Twilio(accountSid, authToken);
 const VoiceResponse = Twilio.twiml.VoiceResponse;
 
 const outboundCall = async (req: Request) => {
+  console.log("attempting to call ");
+
   const call = await client.calls.create({
     method: "POST",
     url: `${process.env.HOST}/voice`,
