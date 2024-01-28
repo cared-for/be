@@ -6,28 +6,6 @@ const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = Twilio(accountSid, authToken);
 const VoiceResponse = Twilio.twiml.VoiceResponse;
 
-const slash = async (req: Request) => {
-  console.log("attempting to call");
-  
-  const res = await fetch(`${process.env.HOST}/voice`, {
-    method: "POST",
-    headers: { "content-type": "text/xml" },
-    body: JSON.stringify({})
-  })
-  const xml = await res.text();
-  console.log("xml: ", xml);
-
-  await client.calls.create({
-    url: `${process.env.URL}/voice`,
-    to: "+16195677998",
-    from: "+13239828587",
-  })
-
-  return new Response("Hello world!", {
-    headers: { "content-type": "text/xml" },
-  });
-}
-
 // Create a route that will handle Twilio webhook requests, sent as an
 // HTTP POST to /voice in our application
 const voice = async (req: Request) => {
@@ -45,11 +23,24 @@ const voice = async (req: Request) => {
 
   // If the user doesn't enter input, loop
   twiml.redirect(`${process.env.HOST}/voice`);
+  
+  const twimlCommand = twiml.toString();
+  console.log(twiml.toString());
+
+  await client.calls.create({
+    twiml: twimlCommand,
+    to: "+16195677998",
+    from: "+13239828587",
+  })
+
+  return new Response("Success!", {
+    headers: { "content-type": "text/xml" },
+  })
 
   // Render the response as XML in reply to the webhook request
-  return new Response(twiml.toString(), {
-    headers: { 'Content-Type': 'text/xml' },
-  });
+  // return new Response(twiml.toString(), {
+  //   headers: { 'Content-Type': 'text/xml' },
+  // });
 };
 
 // Create a route that will handle <Gather> input
@@ -89,7 +80,6 @@ const server = Bun.serve({
   fetch(req) {
     const url = new URL(req.url);
 
-    if (req.method === "GET" && url.pathname === "/") return slash(req);
     if (req.method === "POST" && url.pathname === "/voice") return voice(req);
     if (req.method === "POST" && url.pathname === "/gather") return gather(req);
 
@@ -97,4 +87,4 @@ const server = Bun.serve({
   },
 });
 
-console.log(`Listening on http://${process.env.HOST}:${server.port}`);
+console.log(`Listening on ${process.env.HOST}`);
