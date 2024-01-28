@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1706440340020,
+      "tag": "0000_lonely_dragon_lord",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1706440624823,
+      "tag": "0001_overrated_meggan",
+      "breakpoints": true
+    }
+  ]
+}
