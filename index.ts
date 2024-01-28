@@ -47,7 +47,7 @@ const voice = async (req: Request) => {
 const gather = async (req: Request) => {
   // Use the Twilio Node.js SDK to build an XML response
   const twiml = new VoiceResponse();
-  const body = req.text();
+  const body = await req.text();
   console.log("body: ", body);
   //
   // // If the user entered digits, process their request
