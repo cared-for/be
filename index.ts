@@ -7,15 +7,15 @@ const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = Twilio(accountSid, authToken);
 const VoiceResponse = Twilio.twiml.VoiceResponse;
 
-const outboundCall = async () => {
-  await client.calls.create({
+const outboundCall = async (req: Request) => {
+  const call = await client.calls.create({
     method: "POST",
     url: `${process.env.HOST}/voice`,
     to: "+16195677998",
     from: "+13239828587",
   })
 
-  return new Response("Success!", {
+  return new Response(`Success: ${call.sid}`, {
     headers: { "content-type": "text/xml" },
   });
 }
@@ -79,7 +79,8 @@ const server = Bun.serve({
   port: process.env.PORT ?? 3000,
   fetch(req) {
     const url = new URL(req.url);
-
+    
+    if (req.method === "GET" && url.pathname === "/") return outboundCall(req);
     if (req.method === "POST" && url.pathname === "/voice") return voice(req);
     if (req.method === "POST" && url.pathname === "/gather") return gather(req);
 
