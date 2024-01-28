@@ -43,13 +43,16 @@ const voice = async (req: Request) => {
   // });
 };
 
+import queryString from 'query-string';
+
 // Create a route that will handle <Gather> input
 const gather = async (req: Request) => {
   // Use the Twilio Node.js SDK to build an XML response
   const twiml = new VoiceResponse();
   const body = await req.text();
-  console.log("body: ", body);
-  //
+  console.log("does digits exist?: ", body.includes("Digits"));
+  console.log("body: ", queryString.parse(body));
+
   // // If the user entered digits, process their request
   // if (req.body.Digits) {
   //   switch (req.body!.Digits) {
