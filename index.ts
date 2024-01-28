@@ -15,6 +15,8 @@ const outboundCall = async (req: Request) => {
     from: "+13239828587",
   })
 
+  console.log("call: ", call);
+
   return new Response(`Success: ${call.sid}`, {
     headers: { "content-type": "text/xml" },
   });
