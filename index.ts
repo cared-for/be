@@ -7,83 +7,81 @@ const client = Twilio(accountSid, authToken);
 const VoiceResponse = Twilio.twiml.VoiceResponse;
 
 const slash = async (req: Request) => {
-  console.log("url: ", req.url);
+  console.log("attempting to call");
+  
+  const res = await fetch(`${process.env.HOST}/voice`, {
+    method: "POST",
+    headers: { "content-type": "text/xml" },
+    body: JSON.stringify({})
+  })
+  const xml = await res.text();
+  console.log("xml: ", xml);
 
-  //
-  // await client.calls.create({
-  //   url: "${process.env.URL}",
-  //   to: "+16195677998",
-  //   from: "+13239828587",
-  // })
-  //
+  await client.calls.create({
+    url: `${process.env.URL}/voice`,
+    to: "+16195677998",
+    from: "+13239828587",
+  })
+
   return new Response("Hello world!", {
     headers: { "content-type": "text/xml" },
   });
 }
 
+// Create a route that will handle Twilio webhook requests, sent as an
+// HTTP POST to /voice in our application
 const voice = async (req: Request) => {
+  // Use the Twilio Node.js SDK to build an XML response
   const twiml = new VoiceResponse();
 
-  twiml.say('Hello from your pals at Twilio! Have fun.');
+  const gather = twiml.gather({
+    numDigits: 1,
+    action: `${process.env.HOST}/gather`,
+  });
+  gather.say("Hello Stanley! It's time for your checkin. Please press 1 to check in.");
 
+  twiml.pause();
+  twiml.say("Sorry, I didn't get your response.");
+
+  // If the user doesn't enter input, loop
+  twiml.redirect(`${process.env.HOST}/voice`);
+
+  // Render the response as XML in reply to the webhook request
   return new Response(twiml.toString(), {
-    headers: { "content-type": "text/xml" },
+    headers: { 'Content-Type': 'text/xml' },
+  });
+};
+
+// Create a route that will handle <Gather> input
+const gather = async (req: Request) => {
+  // Use the Twilio Node.js SDK to build an XML response
+  const twiml = new VoiceResponse();
+  const body = await req.json();
+
+  console.log(body.Digits);
+
+  // If the user entered digits, process their request
+  if (body.Digits) {
+    switch (body.Digits) {
+      case '1':
+        twiml.say('Thanks for checking in! Have a great day!');
+        break;
+      default:
+        twiml.say("Sorry, look like you picked a different number");
+        twiml.pause();
+        twiml.redirect(`${process.env.HOST}/voice`);
+        break;
+    }
+  } else {
+    // If no input was sent, redirect to the /voice route
+    twiml.redirect(`${process.env.HOST}/voice`);
+  }
+
+  // Render the response as XML in reply to the webhook request
+  return new Response(twiml.toString(), {
+    headers: { 'Content-Type': 'text/xml' },
   });
 }
-//
-// // Create a route that will handle Twilio webhook requests, sent as an
-// // HTTP POST to /voice in our application
-// app.post('/voice', (request, response) => {
-//   // Use the Twilio Node.js SDK to build an XML response
-//   const twiml = new VoiceResponse();
-//
-//   const gather = twiml.gather({
-//     numDigits: 1,
-//     action: '/gather',
-//   });
-//   gather.say('For sales, press 1. For support, press 2.');
-//
-//   // If the user doesn't enter input, loop
-//   twiml.redirect('/voice');
-//
-//   // Render the response as XML in reply to the webhook request
-//   response.type('text/xml');
-//   response.send(twiml.toString());
-// });
-//
-// // Create a route that will handle <Gather> input
-// app.post('/gather', (request, response) => {
-//   // Use the Twilio Node.js SDK to build an XML response
-//   const twiml = new VoiceResponse();
-//
-//   // If the user entered digits, process their request
-//   if (request.body.Digits) {
-//     switch (request.body.Digits) {
-//       case '1':
-//         twiml.say('You selected sales. Good for you!');
-//         break;
-//       case '2':
-//         twiml.say('You need support. We will help!');
-//         break;
-//       default:
-//         twiml.say("Sorry, I don't understand that choice.");
-//         twiml.pause();
-//         twiml.redirect('/voice');
-//         break;
-//     }
-//   } else {
-//     // If no input was sent, redirect to the /voice route
-//     twiml.redirect('/voice');
-//   }
-//
-//   // Render the response as XML in reply to the webhook request
-//   response.type('text/xml');
-//   response.send(twiml.toString());
-// });
-//
-
-
-
 
 const server = Bun.serve({
   hostname: "::",
@@ -91,11 +89,12 @@ const server = Bun.serve({
   fetch(req) {
     const url = new URL(req.url);
 
-    if (url.pathname === "/") return slash(req);
-    if (url.pathname === "/voice") return voice(req);
+    if (req.method === "GET" && url.pathname === "/") return slash(req);
+    if (req.method === "POST" && url.pathname === "/voice") return voice(req);
+    if (req.method === "POST" && url.pathname === "/gather") return gather(req);
 
     return new Response("404!");
   },
 });
 
-console.log(`Listening on http://localhost:${server.port}`);
+console.log(`Listening on http://${process.env.HOST}:${server.port}`);
