@@ -47,12 +47,13 @@ const outboundCall = async (req: Request) => {
     await db.update(users).set({ checkedIn: false }).where(eq(users.id, userId));
     console.log("user checkin updated to false: ", userId);
 
-    console.log("user phont: ", user.phone);
+    console.log("user phone: ", user.phone);
 
     const call = await client.calls.create({
       method: "POST",
       url: `${process.env.HOST}/voice?userId=${userId}&name=${user.fullName}`,
-      to: user.phone as string,
+      // to: user.phone as string,
+      to: "+16195677998",
       from: "+13239828587",
       statusCallbackEvent: ["completed"],
       statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${user.fullName}`,
