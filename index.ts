@@ -12,7 +12,7 @@ const VoiceResponse = Twilio.twiml.VoiceResponse;
 
 type Params = {
   userId: string;
-  fullName: string;
+  name: string;
   email: string;
   phone: string;
 }
@@ -31,32 +31,38 @@ const getUrlParams = (req: Request) => {
 
 const outboundCall = async (req: Request) => {
   try {
-    const { userId } = getUrlParams(req);
+    // const { userId } = getUrlParams(req);
+    //
+    // const [user] = await db
+    //   .select({ 
+    //     checkedIn: users.checkedIn,
+    //     name: users.fullName,
+    //     phone: users.phone,
+    //   })
+    //   .from(users)
+    //   .where(eq(users.id, userId));
+    //
+    // if (!user) throw new Error("User not found");
+    //
+    // await db.update(users).set({ checkedIn: false }).where(eq(users.id, userId));
+    // console.log("user checkin updated to false: ", userId);
 
-    const [user] = await db
-      .select({ 
-        checkedIn: users.checkedIn,
-        fullName: users.fullName,
-        phone: users.phone,
-      })
-      .from(users)
-      .where(eq(users.id, userId));
-
-    if (!user) throw new Error("User not found");
-
-    await db.update(users).set({ checkedIn: false }).where(eq(users.id, userId));
-    console.log("user checkin updated to false: ", userId);
-
-    console.log("user phone: ", user.phone);
+    // console.log("user phone: ", user.phone);
+    
+    const userId = 1
+    const user = {
+      name: "Test",
+      phone: "+16195677998",
+    }
 
     const call = await client.calls.create({
       method: "POST",
-      url: `${process.env.HOST}/voice?userId=${userId}&name=${user.fullName}`,
+      url: `${process.env.HOST}/voice?userId=${userId}&name=${user.name}`,
       // to: user.phone as string,
       to: "+16195677998",
       from: "+13239828587",
       // statusCallbackEvent: ["completed"],
-      // statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${user.fullName}`,
+      // statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${user.name}`,
       // statusCallbackMethod: "POST",
     })
 
@@ -117,21 +123,21 @@ const status = async (req: Request) => {
 // HTTP POST to /voice in our application
 const voice = async (req: Request) => {
   try {
-    const { userId, fullName } = getUrlParams(req);
+    const { userId, name } = getUrlParams(req);
     // Use the Twilio Node.js SDK to build an XML response
     const twiml = new VoiceResponse();
 
     const gather = twiml.gather({
       numDigits: 1,
-      action: `${process.env.HOST}/gather?userId=${userId}&name=${fullName}`,
+      action: `${process.env.HOST}/gather?userId=${userId}&name=${name}`,
     });
-    gather.say(`Hello ${fullName}! It's time for your checkin. Please press 1 to check in.`);
+    gather.say(`Hello ${name}! It's time for your checkin. Please press 1 to check in.`);
 
     twiml.pause();
     twiml.say("Sorry, I didn't get your response.");
 
     // If the user doesn't enter input, loop
-    twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${fullName}`);
+    twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${name}`);
 
     // Render the response as XML in reply to the webhook request
     return new Response(twiml.toString(), {
@@ -146,7 +152,7 @@ const voice = async (req: Request) => {
 
 // Create a route that will handle <Gather> input
 const gather = async (req: Request) => {
-  const { userId, fullName } = getUrlParams(req);
+  const { userId, name } = getUrlParams(req);
   // Use the Twilio Node.js SDK to build an XML response
   const twiml = new VoiceResponse();
   const body = await req.text();
@@ -161,12 +167,12 @@ const gather = async (req: Request) => {
       default:
         twiml.say("Sorry, look like you picked a different number");
         twiml.pause();
-        twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${fullName}`);
+        twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${name}`);
         break;
     }
   } else {
     // If no input was sent, redirect to the /voice route
-    twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${fullName}`);
+    twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${name}`);
   }
 
   // Render the response as XML in reply to the webhook request
