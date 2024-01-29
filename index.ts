@@ -31,29 +31,29 @@ const getUrlParams = (req: Request) => {
 
 const outboundCall = async (req: Request) => {
   try {
-    // const { userId } = getUrlParams(req);
-    //
-    // const [user] = await db
-    //   .select({ 
-    //     checkedIn: users.checkedIn,
-    //     name: users.fullName,
-    //     phone: users.phone,
-    //   })
-    //   .from(users)
-    //   .where(eq(users.id, userId));
-    //
-    // if (!user) throw new Error("User not found");
-    //
-    // await db.update(users).set({ checkedIn: false }).where(eq(users.id, userId));
-    // console.log("user checkin updated to false: ", userId);
+    const { userId } = getUrlParams(req);
+
+    const [user] = await db
+      .select({ 
+        checkedIn: users.checkedIn,
+        name: users.fullName,
+        phone: users.phone,
+      })
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!user) throw new Error("User not found");
+
+    await db.update(users).set({ checkedIn: false }).where(eq(users.id, userId));
+    console.log("user checkin updated to false: ", userId);
 
     // console.log("user phone: ", user.phone);
     
-    const userId = 1
-    const user = {
-      name: "Test",
-      phone: "+16195677998",
-    }
+    // const userId = 1
+    // const user = {
+    //   name: "Test",
+    //   phone: "+16195677998",
+    // }
 
     const call = await client.calls.create({
       method: "POST",
