@@ -18,7 +18,6 @@ type Params = {
 }
 const getUrlParams = (req: Request) => {
   const urlParamString = req.url.split("?")[1];
-  console.log("url in get url params: ", urlParamString);
   const params = queryString.parse(urlParamString) as Params;
   const userId = params.userId;
   
@@ -33,7 +32,6 @@ const getUrlParams = (req: Request) => {
 const outboundCall = async (req: Request) => {
   try {
     const { userId } = getUrlParams(req);
-    console.log("user id: ", userId);
 
     const [user] = await db
       .select({ 
@@ -47,13 +45,15 @@ const outboundCall = async (req: Request) => {
     if (!user) throw new Error("User not found");
 
     await db.update(users).set({ checkedIn: false }).where(eq(users.id, userId));
-    console.log("updated user checkin updated to false: ", userId);
+    console.log("user checkin updated to false: ", userId);
+
+    console.log("user phont: ", user.phone);
 
     const call = await client.calls.create({
       method: "POST",
       url: `${process.env.HOST}/voice?userId=${userId}&name=${user.fullName}`,
-      to: "+16195677998",
-      from: user.phone as string,
+      to: user.phone as string,
+      from: "+13239828587",
       statusCallbackEvent: ["completed"],
       statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${user.fullName}`,
       statusCallbackMethod: "POST",
