@@ -26,7 +26,6 @@ const getUrlParams = (req: Request) => {
   return {
     ...params,
     userId: Number(userId),
-    name: params.name?.replaceAll(" ", "%20"),
   }
 }
 
@@ -46,17 +45,16 @@ const outboundCall = async (req: Request) => {
     if (!user) throw new Error("User not found");
 
     await db.update(users).set({ checkedIn: false }).where(eq(users.id, userId));
+    const urlQueryName = user.name!.replaceAll(" ", "%20");
     console.log("user checkin updated to false: ", userId);
-    const formattedName = user.name!.replaceAll(" ", "%20");
-    console.log("formatted name: ", formattedName);
  
     const call = await client.calls.create({
       method: "POST",
-      url: `${process.env.HOST}/voice?userId=${userId}&name=${formattedName}`,
+      url: `${process.env.HOST}/voice?userId=${userId}&name=${urlQueryName}`,
       to: user.phone as string,
       from: "+13239828587",
       statusCallbackEvent: ["completed"],
-      statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${formattedName}`,
+      statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${urlQueryName}`,
       statusCallbackMethod: "POST",
     })
 
@@ -73,7 +71,6 @@ const outboundCall = async (req: Request) => {
 const status = async (req: Request) => {
   try {
     const { userId } = getUrlParams(req);
-    console.log("user id in status: ", userId);
 
     const [user] = await db
       .select({ checkedIn: users.checkedIn})
@@ -93,11 +90,12 @@ const status = async (req: Request) => {
     } else {
       console.log("User did not successfully check in");
       const voiceEndpoint = `${process.env.HOST}?userId=${userId}`
+      console.log("voice endpoint: ", voiceEndpoint);
       await fetch(`https://qstash.upstash.io/v2/publish/${voiceEndpoint}`,{
         headers: {
           Authorization: `Bearer ${process.env.UPSTASH_TOKEN}`,
           "Content-Type": "application/json",
-          "Upstash-Delay": "1m",
+          "Upstash-Delay": "10s",
         },
       })
       return new Response(`Success`, {
@@ -120,12 +118,11 @@ const voice = async (req: Request) => {
     // Use the Twilio Node.js SDK to build an XML response
     const twiml = new VoiceResponse();
 
-    console.log("name in voice function: ", name);
-    console.log("userId in voice function: ", userId);
+    const urlQueryName = name.replaceAll(" ", "%20");
 
     const gather = twiml.gather({
       numDigits: 1,
-      action: `${process.env.HOST}/gather?userId=${userId}&name=${name}`,
+      action: `${process.env.HOST}/gather?userId=${userId}&name=${urlQueryName}`,
     });
     gather.say(`Hello ${name}! It's time for your checkin. Please press 1 to check in.`);
 
@@ -133,7 +130,7 @@ const voice = async (req: Request) => {
     twiml.say("Sorry, I didn't get your response.");
 
     // If the user doesn't enter input, loop
-    twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${name}`);
+    twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${urlQueryName}`);
 
     // Render the response as XML in reply to the webhook request
     return new Response(twiml.toString(), {
@@ -153,6 +150,7 @@ const gather = async (req: Request) => {
   const twiml = new VoiceResponse();
   const body = await req.text();
   const params = queryString.parse(body);
+  const urlQueryName = name.replaceAll(" ", "%20");
 
   // If the user entered digits, process their request
   if (params.Digits) {
@@ -164,12 +162,12 @@ const gather = async (req: Request) => {
       default:
         twiml.say("Sorry, look like you picked a different number");
         twiml.pause();
-        twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${name}`);
+        twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${urlQueryName}`);
         break;
     }
   } else {
     // If no input was sent, redirect to the /voice route
-    twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${name}`);
+    twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${urlQueryName}`);
   }
 
   // Render the response as XML in reply to the webhook request
