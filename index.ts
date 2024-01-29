@@ -55,6 +55,16 @@ const outboundCall = async (req: Request) => {
     //   name: "Test",
     //   phone: "+16195677998",
     // }
+    //
+
+    const res = await fetch(`${process.env.HOST}/voice?userId=${userId}&name=${user.name}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/xml",
+      }
+    })
+    const xml = await res.text();
+    console.log("xml: ", xml);
   
     console.log("attempting to make call");
     const call = await client.calls.create({
