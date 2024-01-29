@@ -26,6 +26,7 @@ const getUrlParams = (req: Request) => {
   return {
     ...params,
     userId: Number(userId),
+    name: params.name?.replaceAll(" ", "%20"),
   }
 }
 
