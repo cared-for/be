@@ -68,10 +68,10 @@ const outboundCall = async (req: Request) => {
   
     console.log("attempting to make call");
     const call = await client.calls.create({
-      // method: "POST",
-      // url: `${process.env.HOST}/voice?userId=${userId}&name=${user.name}`,
+      method: "POST",
+      url: `${process.env.HOST}/voice?userId=${userId}&name=${user.name}`,
       // to: user.phone as string,
-      twiml: xml,
+      // twiml: xml,
       to: "+16195677998",
       from: "+13239828587",
       statusCallbackEvent: ["completed"],
