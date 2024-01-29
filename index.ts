@@ -119,6 +119,9 @@ const voice = async (req: Request) => {
     // Use the Twilio Node.js SDK to build an XML response
     const twiml = new VoiceResponse();
 
+    console.log("name in voice function: ", name);
+    console.log("userId in voice function: ", userId);
+
     const gather = twiml.gather({
       numDigits: 1,
       action: `${process.env.HOST}/gather?userId=${userId}&name=${name}`,
