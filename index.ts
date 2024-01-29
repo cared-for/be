@@ -45,24 +45,17 @@ const outboundCall = async (req: Request) => {
     if (!user) throw new Error("User not found");
 
     await db.update(users).set({ checkedIn: false }).where(eq(users.id, userId));
-    console.log("user checkin updated to false: ", userId, user.name);
-
-    const res = await fetch(`${process.env.HOST}/voice?userId=${userId}&name=${user.name.replaceAll(" ", "%20")}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/xml",
-      }
-    })
-    const xml = await res.text();
-    console.log("xml: ", xml);
-  
+    console.log("user checkin updated to false: ", userId);
+    const formattedName = user.name!.replaceAll(" ", "%20");
+    console.log("formatted name: ", formattedName);
+ 
     const call = await client.calls.create({
       method: "POST",
-      url: `${process.env.HOST}/voice?userId=${userId}&name=${user.name}`,
+      url: `${process.env.HOST}/voice?userId=${userId}&name=${formattedName}`,
       to: user.phone as string,
       from: "+13239828587",
       statusCallbackEvent: ["completed"],
-      statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${user.name}`,
+      statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${formattedName}`,
       statusCallbackMethod: "POST",
     })
 
