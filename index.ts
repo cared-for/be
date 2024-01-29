@@ -45,19 +45,9 @@ const outboundCall = async (req: Request) => {
     if (!user) throw new Error("User not found");
 
     await db.update(users).set({ checkedIn: false }).where(eq(users.id, userId));
-    console.log("user checkin updated to false: ", userId);
-    console.log("user: ", user, userId);
+    console.log("user checkin updated to false: ", userId, user.name);
 
-    // console.log("user phone: ", user.phone);
-    
-    // const userId = 1
-    // const user = {
-    //   name: "Test",
-    //   phone: "+16195677998",
-    // }
-    //
-
-    const res = await fetch(`${process.env.HOST}/voice?userId=${userId}&name=${user.name}`, {
+    const res = await fetch(`${process.env.HOST}/voice?userId=${userId}&name=${user.name.replaceAll(" ", "%20")}`, {
       method: "POST",
       headers: {
         "Content-Type": "text/xml",
@@ -66,26 +56,20 @@ const outboundCall = async (req: Request) => {
     const xml = await res.text();
     console.log("xml: ", xml);
   
-    console.log("attempting to make call");
     const call = await client.calls.create({
       method: "POST",
       url: `${process.env.HOST}/voice?userId=${userId}&name=${user.name}`,
-      // to: user.phone as string,
-      // twiml: xml,
-      to: "+16195677998",
+      to: user.phone as string,
       from: "+13239828587",
       statusCallbackEvent: ["completed"],
       statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${user.name}`,
       statusCallbackMethod: "POST",
     })
 
-    console.log("does it get past here in the outbound function?");
-
     return new Response(`Success`, {
       headers: { "content-type": "text/xml" },
     });
   } catch (error: any) {
-    console.log("does it not get in here with the error?: ", error);
     return new Response(error.message, {
       headers: { "content-type": "text/xml" },
     })
@@ -114,7 +98,7 @@ const status = async (req: Request) => {
       });
     } else {
       console.log("User did not successfully check in");
-      const voiceEndpoint = `${process.env.HOST}/voice?userId=${userId}`
+      const voiceEndpoint = `${process.env.HOST}?userId=${userId}`
       await fetch(`https://qstash.upstash.io/v2/publish/${voiceEndpoint}`,{
         headers: {
           Authorization: `Bearer ${process.env.UPSTASH_TOKEN}`,
@@ -177,6 +161,7 @@ const gather = async (req: Request) => {
   if (params.Digits) {
     switch (params.Digits) {
       case '1':
+        await db.update(users).set({ checkedIn: true }).where(eq(users.id, userId));
         twiml.say('Thanks for checking in! Have a great day!');
         break;
       default:
