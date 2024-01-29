@@ -18,6 +18,7 @@ type Params = {
 }
 const getUrlParams = (req: Request) => {
   const url = req.url;
+  console.log("url in get url params: ", url);
   const params = queryString.parse(url) as Params;
   const userId = params.userId;
   
