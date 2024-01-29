@@ -17,9 +17,9 @@ type Params = {
   phone: string;
 }
 const getUrlParams = (req: Request) => {
-  const url = req.url;
-  console.log("url in get url params: ", url);
-  const params = queryString.parse(url) as Params;
+  const urlParamString = req.url.split("?")[1];
+  console.log("url in get url params: ", urlParamString);
+  const params = queryString.parse(urlParamString) as Params;
   const userId = params.userId;
   
   if (!userId) throw new Error("userId is missing");
@@ -115,26 +115,32 @@ const status = async (req: Request) => {
 // Create a route that will handle Twilio webhook requests, sent as an
 // HTTP POST to /voice in our application
 const voice = async (req: Request) => {
-  const { userId, fullName } = getUrlParams(req);
-  // Use the Twilio Node.js SDK to build an XML response
-  const twiml = new VoiceResponse();
+  try {
+    const { userId, fullName } = getUrlParams(req);
+    // Use the Twilio Node.js SDK to build an XML response
+    const twiml = new VoiceResponse();
 
-  const gather = twiml.gather({
-    numDigits: 1,
-    action: `${process.env.HOST}/gather?userId=${userId}&name=${fullName}`,
-  });
-  gather.say(`Hello ${fullName}! It's time for your checkin. Please press 1 to check in.`);
+    const gather = twiml.gather({
+      numDigits: 1,
+      action: `${process.env.HOST}/gather?userId=${userId}&name=${fullName}`,
+    });
+    gather.say(`Hello ${fullName}! It's time for your checkin. Please press 1 to check in.`);
 
-  twiml.pause();
-  twiml.say("Sorry, I didn't get your response.");
+    twiml.pause();
+    twiml.say("Sorry, I didn't get your response.");
 
-  // If the user doesn't enter input, loop
-  twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${fullName}`);
+    // If the user doesn't enter input, loop
+    twiml.redirect(`${process.env.HOST}/voice?userId=${userId}&name=${fullName}`);
 
-  // Render the response as XML in reply to the webhook request
-  return new Response(twiml.toString(), {
-    headers: { 'Content-Type': 'text/xml' },
-  });
+    // Render the response as XML in reply to the webhook request
+    return new Response(twiml.toString(), {
+      headers: { 'Content-Type': 'text/xml' },
+    });
+  } catch (error: any) {
+    return new Response(error.message, {
+      headers: { "content-type": "text/xml" },
+    })
+  }
 };
 
 // Create a route that will handle <Gather> input
