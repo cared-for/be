@@ -55,9 +55,9 @@ const outboundCall = async (req: Request) => {
       // to: user.phone as string,
       to: "+16195677998",
       from: "+13239828587",
-      statusCallbackEvent: ["completed"],
-      statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${user.fullName}`,
-      statusCallbackMethod: "POST",
+      // statusCallbackEvent: ["completed"],
+      // statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${user.fullName}`,
+      // statusCallbackMethod: "POST",
     })
 
     return new Response(`Success`, {
