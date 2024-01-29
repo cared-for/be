@@ -46,6 +46,7 @@ const outboundCall = async (req: Request) => {
 
     await db.update(users).set({ checkedIn: false }).where(eq(users.id, userId));
     console.log("user checkin updated to false: ", userId);
+    console.log("user: ", user, userId);
 
     // console.log("user phone: ", user.phone);
     
@@ -54,7 +55,8 @@ const outboundCall = async (req: Request) => {
     //   name: "Test",
     //   phone: "+16195677998",
     // }
-
+  
+    console.log("attempting to make call");
     const call = await client.calls.create({
       method: "POST",
       url: `${process.env.HOST}/voice?userId=${userId}&name=${user.name}`,
@@ -65,6 +67,8 @@ const outboundCall = async (req: Request) => {
       statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${user.name}`,
       statusCallbackMethod: "POST",
     })
+
+    console.log("does it get past here in the outbound function?");
 
     return new Response(`Success`, {
       headers: { "content-type": "text/xml" },
