@@ -1,54 +1,35 @@
-import Twilio from "twilio";
-import queryString from 'query-string';
-import "dotenv/config";
-import { db } from "./db/db";
-import { users } from "./db/schema";
 import { eq } from "drizzle-orm";
+import queryString from "query-string";
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const client = Twilio(accountSid, authToken);
-const VoiceResponse = Twilio.twiml.VoiceResponse;
+import { client, VoiceResponse } from "../twilio";
+import { getUrlParams } from "../utils";
+import { db } from "../db/db";
 
-type Params = {
-  userId: string;
-  name: string;
-  email: string;
-  phone: string;
-}
-const getUrlParams = (req: Request) => {
-  const urlParamString = req.url.split("?")[1];
-  const params = queryString.parse(urlParamString) as Params;
-  const userId = params.userId;
-  
-  if (!userId) throw new Error("userId is missing");
-  
-  return {
-    ...params,
-    userId: Number(userId),
-  }
-}
+// db
+import { users } from "../db/schema";
 
-const outboundCall = async (req: Request) => {
+export const outboundCall = async (req: Request) => {
   try {
     const { userId } = getUrlParams(req);
 
     const [user] = await db
-      .select({ 
-        checkedIn: users.checkedIn,
-        name: users.fullName,
-        phone: users.phone,
-      })
+      .select()
       .from(users)
       .where(eq(users.id, userId));
 
-    if (!user) throw new Error("User not found");
+    if (!user) return new Response("User not found", { status: 404 });
 
-    await db.update(users).set({ checkedIn: false }).where(eq(users.id, userId));
-    const urlQueryName = user.name!.replaceAll(" ", "%20");
+    await db
+      .update(users)
+      .set({ 
+        checkedIn: false,
+        attemptCount: user.attemptCount + 1,
+      })
+      .where(eq(users.id, userId));
+    const urlQueryName = user.fullName!.replaceAll(" ", "%20");
     console.log("user checkin updated to false: ", userId);
  
-    const call = await client.calls.create({
+    client.calls.create({
       method: "POST",
       url: `${process.env.HOST}/voice?userId=${userId}&name=${urlQueryName}`,
       to: user.phone as string,
@@ -60,59 +41,20 @@ const outboundCall = async (req: Request) => {
 
     return new Response(`Success`, {
       headers: { "content-type": "text/xml" },
+      status: 200,
     });
   } catch (error: any) {
     return new Response(error.message, {
       headers: { "content-type": "text/xml" },
+      status: 500,
     })
   }
 }
 
-const status = async (req: Request) => {
-  try {
-    const { userId } = getUrlParams(req);
-
-    const [user] = await db
-      .select({ checkedIn: users.checkedIn})
-      .from(users)
-      .where(eq(users.id, userId))
-
-    if (!user) {
-      return new Response("User not found", {
-        headers: { "content-type": "text/xml" },
-      })
-    }
-
-    if (user.checkedIn) {
-      return new Response(`Success`, {
-        headers: { "content-type": "text/xml" },
-      });
-    } else {
-      console.log("User did not successfully check in");
-      const voiceEndpoint = `${process.env.HOST}?userId=${userId}`
-      console.log("voice endpoint: ", voiceEndpoint);
-      await fetch(`https://qstash.upstash.io/v2/publish/${voiceEndpoint}`,{
-        headers: {
-          Authorization: `Bearer ${process.env.UPSTASH_TOKEN}`,
-          "Content-Type": "application/json",
-          "Upstash-Delay": "10s",
-        },
-      })
-      return new Response(`Success`, {
-        headers: { "content-type": "text/xml" },
-      });
-    }
-
-  } catch (error: any) {
-    return new Response(error.message, {
-      headers: { "content-type": "text/xml" },
-    })
-  }
-}
 
 // Create a route that will handle Twilio webhook requests, sent as an
 // HTTP POST to /voice in our application
-const voice = async (req: Request) => {
+export const voice = async (req: Request) => {
   try {
     const { userId, name } = getUrlParams(req);
     // Use the Twilio Node.js SDK to build an XML response
@@ -135,16 +77,18 @@ const voice = async (req: Request) => {
     // Render the response as XML in reply to the webhook request
     return new Response(twiml.toString(), {
       headers: { 'Content-Type': 'text/xml' },
+      status: 200,
     });
   } catch (error: any) {
     return new Response(error.message, {
       headers: { "content-type": "text/xml" },
+      status: 500,
     })
   }
 };
 
 // Create a route that will handle <Gather> input
-const gather = async (req: Request) => {
+export const gather = async (req: Request) => {
   const { userId, name } = getUrlParams(req);
   // Use the Twilio Node.js SDK to build an XML response
   const twiml = new VoiceResponse();
@@ -173,22 +117,7 @@ const gather = async (req: Request) => {
   // Render the response as XML in reply to the webhook request
   return new Response(twiml.toString(), {
     headers: { 'Content-Type': 'text/xml' },
+    status: 200,
   });
 }
 
-const server = Bun.serve({
-  hostname: "::",
-  port: process.env.PORT ?? 3000,
-  fetch(req) {
-    const url = new URL(req.url);
-    
-    if (req.method === "GET" && url.pathname === "/") return outboundCall(req);
-    if (req.method === "POST" && url.pathname === "/voice") return voice(req);
-    if (req.method === "POST" && url.pathname === "/gather") return gather(req);
-    if (req.method === "POST" && url.pathname === "/status") return status(req);
-
-    return new Response("404!");
-  },
-});
-
-console.log(`Listening on ${process.env.HOST}`);

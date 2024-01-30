@@ -3,12 +3,18 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "start": "bun --hot run index.ts",
-    "build": "bun build index.ts --target bun --outdir ./build",
+    "start": "bun --hot run src/index.ts",
+    "build": "bun build src/index.ts --target bun --outdir ./build",
     "generate": "bunx drizzle-kit generate:pg",
-    "migrate": "bunx tsx db/migrate.ts"
+    "migrate": "bunx tsx src/db/migrate.ts"
   },
-  "dependencies": { "dotenv": "^16.4.1", "drizzle-orm": "^0.29.3", "postgres": "^3.4.3", "query-string": "^8.1.0", "twilio": "^4.21.0" },
+  "dependencies": { 
+      "dotenv": "^16.4.1",
+      "drizzle-orm": "^0.29.3",
+      "postgres": "^3.4.3",
+      "query-string": "^8.1.0",
+      "twilio": "^4.21.0"
+  },
   "devDependencies": {
     "bun-types": "latest",
     "drizzle-kit": "^0.20.13"
