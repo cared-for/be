@@ -23,7 +23,6 @@ export const outboundCall = async (req: Request) => {
       .update(users)
       .set({ 
         checkedIn: false,
-        attemptCount: user.attemptCount + 1,
       })
       .where(eq(users.id, userId));
     const urlQueryName = user.fullName!.replaceAll(" ", "%20");
