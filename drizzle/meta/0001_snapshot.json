@@ -1,6 +1,6 @@
 {
-  "id": "1b382a66-0d6f-4200-8674-d86c6b3e56db",
-  "prevId": "391beff4-1898-47e9-a3ba-11a1b16be450",
+  "id": "b7c31350-453e-43c0-afd7-0b0b24466b83",
+  "prevId": "b6ad859a-8bf9-4480-941b-d227405b86f9",
   "version": "5",
   "dialect": "pg",
   "tables": {
@@ -34,9 +34,9 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "serial",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         }
       },
       "indexes": {},
@@ -91,6 +91,26 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "is_on_free_trial": {
+          "name": "is_on_free_trial",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "free_trial_start": {
+          "name": "free_trial_start",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_user_onboarding": {
+          "name": "completed_user_onboarding",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {},

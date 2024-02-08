@@ -86,6 +86,7 @@ export const voice = async (req: Request) => {
   }
 };
 
+// NOT IN USE
 // Create a route that will handle <Gather> input
 export const gather = async (req: Request) => {
   const { userId, name } = getUrlParams(req);
