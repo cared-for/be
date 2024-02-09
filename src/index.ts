@@ -13,7 +13,6 @@ const server = Bun.serve({
     if (req.method === "POST" && url.pathname === "/voice") return handlers.voice(req);
     if (req.method === "POST" && url.pathname === "/gather") return handlers.gather(req);
     if (req.method === "POST" && url.pathname === "/status") return handlers.status(req);
-    if (req.method === "POST" && url.pathname === "/schedule") return handlers.schedule(req);
 
     return new Response("404!");
   },

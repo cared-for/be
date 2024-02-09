@@ -35,10 +35,10 @@ export const users = createTable('users', {
   checkedIn: boolean('checked_in').default(false),
   checkInTime: time('check_in_time', { withTimezone: false }),
   scheduleId: varchar('schedule_id', { length: 256 }),
-  attemptCount: integer('attempt_count').default(0),
+  attemptCount: integer('attempt_count').default(0).notNull(),
   
   // payment info
-  onFreeTrial: boolean('on_free_trial').default(true),
+  isPaying: boolean('is_paying').default(false),
   freeTrialStart: timestamp('free_trial_start', { withTimezone: false }).defaultNow(),
   customerId: varchar('customer_id', { length: 256 }).notNull(),
 

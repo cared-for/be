@@ -1,5 +1,5 @@
 import queryString from "query-string";
-
+ 
 type Params = {
   userId: string;
   dependentId: string;

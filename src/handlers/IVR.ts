@@ -27,7 +27,8 @@ export const outboundCall = async (req: Request) => {
       .where(eq(users.id, userId));
     const urlQueryName = user.fullName!.replaceAll(" ", "%20");
     console.log("user checkin updated to false: ", userId);
- 
+
+    console.log("user phone out bound call: ", user.phone)
     client.calls.create({
       method: "POST",
       url: `${process.env.HOST}/voice?userId=${userId}&name=${urlQueryName}`,

@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 
 import { client } from "../twilio";
 import { db } from "../db/db";
-import { users, dependents } from "../db/schema";
+import * as table from "../db/schema";
 import { getUrlParams } from "../utils";
 
 export const status = async (req: Request) => {
@@ -11,11 +11,11 @@ export const status = async (req: Request) => {
 
     const [user] = await db
       .select({ 
-        checkedIn: users.checkedIn,
-        attemptCount: users.attemptCount,
+        checkedIn: table.users.checkedIn,
+        attemptCount: table.users.attemptCount,
       })
-      .from(users)
-      .where(eq(users.id, userId))
+      .from(table.users)
+      .where(eq(table.users.id, userId))
     console.log("user in status: ", user);
 
     if (!user) {
@@ -27,9 +27,9 @@ export const status = async (req: Request) => {
     if (user.checkedIn) {
       console.log("User successfully checked in");
       await db
-        .update(users)
+        .update(table.users)
         .set({ attemptCount: 0 })
-        .where(eq(users.id, userId));
+        .where(eq(table.users.id, userId));
 
       return new Response(`Success`, {
         headers: { "content-type": "text/xml" },
@@ -39,9 +39,9 @@ export const status = async (req: Request) => {
       if (user.attemptCount < 4) {
         console.log("updated user attempt count");
         await db
-          .update(users)
+          .update(table.users)
           .set({ attemptCount: user.attemptCount + 1 })
-          .where(eq(users.id, userId));
+          .where(eq(table.users.id, userId));
         
         const outboundEndpoint = `${process.env.HOST}?userId=${userId}`
         console.log("attempting to retry outbound endpoint: ", outboundEndpoint);
@@ -50,7 +50,7 @@ export const status = async (req: Request) => {
           headers: {
             Authorization: `Bearer ${process.env.UPSTASH_TOKEN}`,
             "Content-Type": "application/json",
-            "Upstash-Delay": "10s",
+            "Upstash-Delay": "15m",
           },
         })
 
@@ -60,11 +60,10 @@ export const status = async (req: Request) => {
           headers: { "content-type": "text/xml" },
         });
       } else {
-        console.log("does it get in here?");
-        await db.update(users).set({ attemptCount: 0 }).where(eq(users.id, userId));
+        await db.update(table.users).set({ attemptCount: 0 }).where(eq(table.users.id, userId));
         await notifyDependents(userId);
 
-        return new Response(`Contacting dependents`, {
+        return new Response(`Contacting table.dependents`, {
           headers: { "content-type": "text/xml" },
         });
       }
@@ -79,26 +78,39 @@ export const status = async (req: Request) => {
 
 const notifyDependents = async (userId: number) => {
   const [user] = await db
-    .select({ name: users.fullName })
-    .from(users)
-    .where(eq(users.id, userId));
-  const contacts = await db
-    .select({ phone: dependents.phone, name: dependents.fullName })
-    .from(dependents)
-    .where(eq(dependents.userId, userId));
-  
-  if (!user) return new Response("User not found", { status: 404 });
-  if (contacts.length === 0) return new Response("No dependents found", { status: 404 });
+    .select({ name: table.users.fullName })
+    .from(table.users)
+    .where(eq(table.users.id, userId));
+  const dependents = await db
+    .select({ phone: table.dependents.phone, name: table.dependents.fullName })
+    .from(table.dependents)
+    .where(eq(table.dependents.userId, userId));
 
-  for (const contact of contacts) {
-    console.log("attempting to send message to: ", contact.phone);
-    client.messages
-      .create({
-         body: `Hello ${contact.name} - We are notifiying you that ${user.name} has failed to check in 4 times in a row over the hour. It may be in your best interest to try and contact them independently`,
-         from: "+13239828587",
-         to: contact.phone as string
-       })
-    console.log("message sent");
+  if (!user) return new Response("User not found", { status: 404 });
+  if (dependents.length === 0) return new Response("No table.dependents found", { status: 404 });
+
+  console.log("dependents: ", dependents);
+  for (const dependent of dependents) {
+    // console.log("attempting to message")
+    // client.messages
+    //   .create({
+    //      body: `Hello ${dependent.name} - We are notifiying you that ${user.name} has failed to check in 4 times in a row over the hour. It may be in your best interest to try and contact them independently`,
+    //      from: "+13239828587",
+    //      to: dependent.phone as string
+    //    })
+    // console.log("message sent");
+    //
+    const twiml = `
+<Response>
+    <Say>Hello ${dependent.name}, We are notifiying you that ${user.name} has failed to check in 4 times in a row over the hour. It may be in your best interest to try and contact them independently. Thank you very much.</Say>
+</Response>
+`
+ 
+    client.calls.create({
+      twiml,
+      to: dependent.phone as string,
+      from: "+13239828587",
+    })
   }
 }
 
