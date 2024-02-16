@@ -50,7 +50,7 @@ export const status = async (req: Request) => {
           headers: {
             Authorization: `Bearer ${process.env.UPSTASH_TOKEN}`,
             "Content-Type": "application/json",
-            "Upstash-Delay": "15m",
+            "Upstash-Delay": "10s",
           },
         })
 
@@ -91,26 +91,14 @@ const notifyDependents = async (userId: number) => {
 
   console.log("dependents: ", dependents);
   for (const dependent of dependents) {
-    // console.log("attempting to message")
-    // client.messages
-    //   .create({
-    //      body: `Hello ${dependent.name} - We are notifiying you that ${user.name} has failed to check in 4 times in a row over the hour. It may be in your best interest to try and contact them independently`,
-    //      from: "+13239828587",
-    //      to: dependent.phone as string
-    //    })
-    // console.log("message sent");
-    //
-    const twiml = `
-<Response>
-    <Say>Hello ${dependent.name}, We are notifiying you that ${user.name} has failed to check in 4 times in a row over the hour. It may be in your best interest to try and contact them independently. Thank you very much.</Say>
-</Response>
-`
- 
-    client.calls.create({
-      twiml,
-      to: dependent.phone as string,
-      from: "+13239828587",
-    })
+    console.log("attempting to message")
+    client.messages
+      .create({
+         body: `Hello ${dependent.name} - We are notifiying you that ${user.name} has failed to check in 4 times in a row over the hour. It may be in your best interest to try and contact them independently`,
+         from: "+18889043674",
+         to: dependent.phone as string
+       })
+    console.log("message sent");
   }
 }
 

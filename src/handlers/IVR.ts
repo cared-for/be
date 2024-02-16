@@ -33,7 +33,7 @@ export const outboundCall = async (req: Request) => {
       method: "POST",
       url: `${process.env.HOST}/voice?userId=${userId}&name=${urlQueryName}`,
       to: user.phone as string,
-      from: "+13239828587",
+      from: "+18889043674",
       statusCallbackEvent: ["completed"],
       statusCallback: `${process.env.HOST}/status?userId=${userId}&name=${urlQueryName}`,
       statusCallbackMethod: "POST",

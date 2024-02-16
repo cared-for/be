@@ -12,6 +12,7 @@ import {
   integer,
   text,
   uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
 import { type InferSelectModel, type InferInsertModel } from 'drizzle-orm'
 
@@ -45,7 +46,8 @@ export const users = createTable('users', {
   // onboarding info
   completedUserOnboarding: boolean('completed_user_onboarding').default(false),
 }, (users) => ({
-  emailIndex: uniqueIndex('users_email_idx').on(users.email)
+  emailIndex: uniqueIndex('users_email_idx').on(users.email),
+  customerId: uniqueIndex('users_customer_id_idx').on(users.customerId),
 }))
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -62,7 +64,8 @@ export const dependents = createTable('dependents', {
   email: varchar('email', { length: 256 }),
   userId: integer('user_id').references(() => users.id),
 }, (dependents) => ({
-  emailIndex: uniqueIndex('dependents_user_email_idx').on(dependents.userId, dependents.email)
+  emailIndex: uniqueIndex('dependents_user_email_idx').on(dependents.userId, dependents.email),
+  userIndex: index('dependents_user_id_idx').on(dependents.userId),
 }))
 
 export const dependentRelations = relations(dependents, ({ one }) => ({
