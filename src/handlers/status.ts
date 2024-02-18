@@ -50,7 +50,7 @@ export const status = async (req: Request) => {
           headers: {
             Authorization: `Bearer ${process.env.UPSTASH_TOKEN}`,
             "Content-Type": "application/json",
-            "Upstash-Delay": "10s",
+            "Upstash-Delay": "15m",
           },
         })
 
